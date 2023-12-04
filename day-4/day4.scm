@@ -65,15 +65,13 @@
              (id (car card))
              (matching (matching-numbers-count card))
              (count (cdr (assoc id card-counts))))
-        (map
-         (lambda (a)
-           (map (lambda (x)
-                  (assoc-set! card-counts
-                              x
-                              (1+ (cdr (assoc x card-counts)))))
-                (iota matching
-                      (1+ id))))
-         (iota count))
+        (map (lambda (x)
+               (assoc-set! card-counts
+                           x
+                           (+ (cdr (assoc x card-counts))
+                              count)))
+             (iota matching
+                   (1+ id)))
         (-calculate-total-amount-of-cards
          (cdr cards)
          card-counts))))
