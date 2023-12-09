@@ -62,7 +62,7 @@
             (hash-set! steps-cache n (+ steps (hash-ref steps-cache n))))
           (hash-set! steps-cache n (- steps)))))
   (if (and (not (hash-empty? steps-cache))
-       (for/and {[[k v] steps-cache]} (positive? v)))
+           (for/and {[[k v] steps-cache]} (positive? v)))
       (apply lcm (hash-values steps-cache))
       (let* {[inst (string-ref instructions ip)]
              [next (cond
