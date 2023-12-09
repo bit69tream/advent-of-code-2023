@@ -53,6 +53,30 @@
               (remainder (add1 ip) (string-length instructions))
               (add1 steps)))))
 
+(define (walk-smarter instructions nodes current
+                      [ip 0] [steps 0] [steps-cache (make-hash)])
+  (for {[n (in-list current)]}
+    (when (string-suffix? n "Z")
+      (if (hash-has-key? steps-cache n)
+          (when (negative? (hash-ref steps-cache n))
+            (hash-set! steps-cache n (+ steps (hash-ref steps-cache n))))
+          (hash-set! steps-cache n (- steps)))))
+  (if (and (not (hash-empty? steps-cache))
+       (for/and {[[k v] steps-cache]} (positive? v)))
+      (apply lcm (hash-values steps-cache))
+      (let* {[inst (string-ref instructions ip)]
+             [next (cond
+                     [(char=? #\L inst) first]
+                     [(char=? #\R inst) second])]
+             [next-nodes (map (lambda (n)
+                                (next (cadr (assoc n nodes))))
+                              current)]}
+        (walk-smarter
+         instructions nodes next-nodes
+         (remainder (add1 ip) (string-length instructions))
+         (add1 steps)
+         steps-cache))))
+
 (define (part-1 input)
   (let-values {[[instructions nodes] (parse-input input)]}
     (walk instructions nodes '("AAA"))))
@@ -76,10 +100,11 @@
 
 (define (part-2 input)
   (let-values {[[instructions nodes] (parse-input input)]}
-    (walk instructions nodes
-          (filter (lambda (x)
-                    (string-suffix? x "A"))
-                  (map car nodes)))))
+    (walk-smarter
+     instructions nodes
+     (filter (lambda (x)
+               (string-suffix? x "A"))
+             (map car nodes)))))
 
 (fprintf (current-output-port)
          "part 2 (sample input): ~a\n"
