@@ -10,6 +10,17 @@
     "GGG = (GGG, GGG)"
     "ZZZ = (ZZZ, ZZZ)"))
 
+(define sample-input-2
+  '("LR"
+    "11A = (11B, XXX)"
+    "11B = (XXX, 11Z)"
+    "11Z = (11B, XXX)"
+    "22A = (22B, XXX)"
+    "22B = (22C, 22C)"
+    "22C = (22Z, 22Z)"
+    "22Z = (22B, 22B)"
+    "XXX = (XXX, XXX)"))
+
 (define (parse-node node)
   (let* {[a (string-split node " = ")]
          [name (car a)]
@@ -27,21 +38,24 @@
             (map parse-node
                  nodes))))
 
-(define (walk instructions nodes node [ip 0] [steps 0])
-  (if (string=? node "ZZZ")
+(define (walk instructions nodes current [ip 0] [steps 0])
+  (if (for/and ([n current])
+        (string-suffix? n "Z"))
       steps
       (let* {[inst (string-ref instructions ip)]
-             [paths (cadr (assoc node nodes))]
-             [next-node (cond
-                          [(char=? #\L inst) (first paths)]
-                          [(char=? #\R inst) (second paths)])]}
-        (walk instructions nodes next-node
+             [next (cond
+                     [(char=? #\L inst) first]
+                     [(char=? #\R inst) second])]
+             [next-nodes (map (lambda (n)
+                                (next (cadr (assoc n nodes))))
+                              current)]}
+        (walk instructions nodes next-nodes
               (remainder (add1 ip) (string-length instructions))
               (add1 steps)))))
 
 (define (part-1 input)
-  (let-values {[(instructions nodes) (parse-input input)]}
-    (walk instructions nodes "AAA")))
+  (let-values {[[instructions nodes] (parse-input input)]}
+    (walk instructions nodes '("AAA"))))
 
 (define (file->input path)
   (filter (lambda (s)
@@ -60,13 +74,17 @@
          "part 1: ~a\n"
          (part-1 input))
 
-(define sample-input-2
-  '("LR"
-    "11A = (11B, XXX)"
-    "11B = (XXX, 11Z)"
-    "11Z = (11B, XXX)"
-    "22A = (22B, XXX)"
-    "22B = (22C, 22C)"
-    "22C = (22Z, 22Z)"
-    "22Z = (22B, 22B)"
-    "XXX = (XXX, XXX)"))
+(define (part-2 input)
+  (let-values {[[instructions nodes] (parse-input input)]}
+    (walk instructions nodes
+          (filter (lambda (x)
+                    (string-suffix? x "A"))
+                  (map car nodes)))))
+
+(fprintf (current-output-port)
+         "part 2 (sample input): ~a\n"
+         (part-2 sample-input-2))
+
+(fprintf (current-output-port)
+         "part 2: ~a\n"
+         (part-2 input))
